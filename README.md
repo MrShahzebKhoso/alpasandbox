@@ -17,7 +17,9 @@
 
 </div>
 
-AlpaSandbox gives a driving vision-language-action (VLA) model a car. It renders the model's exact multi-camera input from a simulator (CARLA, or a built-in one that needs nothing installed), runs the model, drives with the trajectory it returns, and shows everything live: a 3D driving view, six cameras, the model's Chain-of-Causation reasoning, speed and braking, and closed-loop metrics.
+NVIDIA's [Alpamayo 2 Edge](https://github.com/NVlabs/alpamayo2-edge) is an open driving vision-language-action (VLA) model, and many people are experimenting with it. AlpaSandbox is a live demo around it: put the model behind the wheel, ask it questions while it drives, and see in real time what it thinks, where it plans to go, and the exact steering, throttle and brake it produces.
+
+AlpaSandbox gives a driving VLA model a car. It renders the model's exact multi-camera input from a simulator (CARLA, or a built-in one that needs nothing installed), runs the model, drives with the trajectory it returns, and shows everything live: a 3D driving view, six cameras, the model's Chain-of-Causation reasoning, speed and braking, and closed-loop metrics.
 
 You can steer the model while it drives. Send a **navigation command** ("Turn right in 30m") and it conditions the next plan. Or **ask it a question** about what it sees ("Is it safe to change lanes?"). The simulation waits while the model answers.
 
@@ -75,41 +77,144 @@ The **Log** tab lists what the app is doing: backend start, model load time, sce
 - **Bring your own model.** Implement `act()` (and optionally `query()`), then register it with an entry point or pass `--model my_pkg.mod:MyPolicy`. The app, metrics and HTTP API work unchanged.
 - **Reproducible output.** Per-step JSONL traces (pose, controls, plan, reasoning, latency, controller and simulator internals), a headless `run --all` mini-benchmark, and `doctor` to check a setup.
 
-## Quick start (no GPU, two minutes)
+## Getting started: Alpamayo 2 Edge in CARLA
 
-AlpaSandbox is a standalone package. It runs on its own with a built-in simulator and a rule-based driver. The model (Alpamayo 2 Edge) and the simulator (CARLA) are optional, installed separately when you want them.
+This is the main setup and the one the project was built and tested on: CARLA renders the world (on Windows or Linux) and Alpamayo 2 Edge drives from its cameras in WSL2 or Linux. AlpaSandbox does not include NVIDIA's model code or weights; you install them from NVIDIA in step 2.
+
+### What you need
+
+| | |
+|---|---|
+| GPU | NVIDIA, **16 GB or more**, with bf16 support (Ampere or newer). CARLA and the model can share one 16 GB laptop GPU. |
+| OS | Linux, or Windows 11 with **WSL2** (Ubuntu 24.04 tested). Inside WSL use the normal NVIDIA *Windows* driver; do not install a Linux driver. |
+| Python | 3.12, managed by [uv](https://docs.astral.sh/uv/getting-started/installation/) (`curl -LsSf https://astral.sh/uv/install.sh \| sh`) |
+| Model access | A Hugging Face account that has accepted the terms of [nvidia/Alpamayo2-Edge](https://huggingface.co/nvidia/Alpamayo2-Edge) |
+| Simulator | [CARLA 0.9.16](https://github.com/carla-simulator/carla/releases) (about 20 GB unpacked) |
+| Disk | About 5.3 GB for the model weights, plus the Python environment |
+
+### 1. Start CARLA headless
+
+Download the CARLA 0.9.16 package for your OS from the [CARLA releases page](https://github.com/carla-simulator/carla/releases) and unpack it. Start it without a window, which saves GPU memory for the model:
+
+```powershell
+# Windows (PowerShell, inside the CARLA folder)
+.\CarlaUE4.exe -RenderOffScreen -quality-level=Low -nosound
+```
+
+```bash
+# Linux
+./CarlaUE4.sh -RenderOffScreen -quality-level=Low -nosound
+```
+
+CARLA listens on TCP ports 2000 and 2001. On Windows, allow `CarlaUE4` through the firewall when asked (WSL connects to it over the network). Leave it running.
+
+### 2. Install Alpamayo 2 Edge (Linux or WSL)
+
+```bash
+git clone https://github.com/NVlabs/alpamayo2-edge && cd alpamayo2-edge
+export UV_PROJECT_ENVIRONMENT=.venv
+uv sync --locked
+source .venv/bin/activate
+hf auth login                      # paste a Hugging Face token with access to the model
+python -c "import torch; print(torch.cuda.is_available(), torch.cuda.is_bf16_supported())"   # both must be True
+```
+
+This is NVIDIA's own environment (PyTorch 2.8, Transformers 5.17). See their [README](https://github.com/NVlabs/alpamayo2-edge) if anything fails here.
+
+### 3. Install AlpaSandbox into the same environment
+
+With the `alpamayo2-edge` environment still active:
+
+```bash
+uv pip install "git+https://github.com/MrShahzebKhoso/alpasandbox" carla==0.9.16
+```
+
+The `carla` client must match the server version exactly. To work on AlpaSandbox itself, clone it and use `uv pip install -e ./alpasandbox carla==0.9.16` instead.
+
+**Optional, faster plans:** install FlashAttention 2.8.3 from its prebuilt wheel (this one matches the pinned PyTorch 2.8, CUDA 12, Python 3.12, x86-64):
+
+```bash
+uv pip install --no-deps "flash-attn @ https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.3/flash_attn-2.8.3+cu12torch2.8cxx11abiTRUE-cp312-cp312-linux_x86_64.whl"
+```
+
+### 4. Check the setup
+
+```bash
+# In WSL, CARLA on Windows is reached through the Windows host IP:
+CARLA_HOST=$(ip route | awk '/default/ {print $3}')
+# On Linux with CARLA on the same machine: CARLA_HOST=localhost
+
+alpasandbox doctor --model edge --backend carla --carla-host $CARLA_HOST
+```
+
+`doctor` checks Python, the GPU, the model package, the CARLA connection and the config, and says how to fix anything missing.
+
+### 5. Drive
+
+```bash
+alpasandbox app --model edge --backend carla --carla-host $CARLA_HOST --carla-town Town10HD_Opt
+```
+
+Open <http://localhost:8000>, pick a scenario and press **Drive**. The first launch downloads the weights (about 5.3 GB); afterwards set `export HF_HUB_OFFLINE=1` to skip the online check.
+
+If you installed FlashAttention, add `--set accel=tuned --set attn_implementation=flash_attention_2`. This uses NVIDIA's acceleration in `alpamayo2_edge.accel`: the first plan compiles CUDA graphs and takes about 15 seconds, and later plans take about 1.5 s on a 16 GB laptop GPU shared with CARLA. If GPU memory runs short, also `export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`.
+
+While it drives you can:
+
+- send a navigation command from **Drive instructions** ("Turn right in 30m.", "Change to the left lane.") and watch the reasoning react,
+- ask a question in **Conversation** ("Why did you change lanes?"); the simulation waits while the model answers,
+- hold the traffic light at red, yellow or green, switch between the 3D and 2D views, and download the trace.
+
+### 6. Save your settings (optional)
+
+`alpasandbox init` writes a commented `alpasandbox.toml` in the current folder. With your settings in it, `alpasandbox app` is all you need to type:
+
+```toml
+[app]
+scenario = "straight_cruise"
+
+[sim]
+backend = "carla"
+
+[carla]
+host = "172.x.x.x"       # the Windows host IP from step 4, or "localhost"
+town = "Town10HD_Opt"
+spawn_index = 1          # which spawn point of the map the car starts at
+
+[model]
+name = "edge"
+
+[model.settings]
+accel = "tuned"                           # only with FlashAttention installed
+attn_implementation = "flash_attention_2"
+```
+
+Useful model settings: `num_traj_sets=3` draws alternative plans, `diffusion_steps=5` trades accuracy for speed, `model_id=/path/to/checkpoint` loads local weights. All settings are in [docs/configuration.md](docs/configuration.md), and CARLA options (other towns, traffic, scenario roads) in [docs/carla.md](docs/carla.md).
+
+### Other ways to run the model
+
+The model can also run in a separate environment from the app. These are implemented but **not tested on real hardware yet**; see [docs/installation.md](docs/installation.md) for each.
+
+| Setup | Command |
+|---|---|
+| AlpaSandbox on Windows, model in WSL | `alpasandbox app --model edge --runtime wsl --wsl-distro Ubuntu-24.04 --wsl-workdir ~/alpamayo2-edge --wsl-venv .venv --backend carla` |
+| Model in its own venv on the same machine | `alpasandbox app --model edge --runtime subprocess --worker-python ~/alpamayo2-edge/.venv/bin/python` |
+| Remote GPU | GPU box: `alpasandbox serve-model --model edge`<br>Your machine: `alpasandbox app --model edge --runtime remote --remote-url http://gpu-box:8100` |
+
+Without CARLA, drop the `--backend carla` flags: the built-in simulator draws simple roads and needs nothing installed. Alpamayo was trained on real video, so it drives better from CARLA's imagery.
+
+## Try the app without a GPU
+
+To look around the interface before setting up the model, AlpaSandbox can run on its own with the built-in simulator and `oracle`, a rule-based driver that reads the simulator's ground truth instead of cameras (so it does not reason or answer real questions):
 
 ```bash
 pip install git+https://github.com/MrShahzebKhoso/alpasandbox
 alpasandbox app --model oracle
 ```
 
-Open <http://localhost:8000>. `oracle` is a rule-based test fixture that reads ground truth, so you can try the whole app before installing a model. From a clone, use `pip install -e .` instead of the first line.
+Then open <http://localhost:8000>.
 
-## With Alpamayo 2 Edge
-
-AlpaSandbox does not include NVIDIA's model code. Install NVIDIA's [alpamayo2-edge](https://github.com/NVlabs/alpamayo2-edge) package into the same environment (or point AlpaSandbox at its environment). You need an NVIDIA GPU with at least 16 GB, Python 3.12, and access to [nvidia/Alpamayo2-Edge](https://huggingface.co/nvidia/Alpamayo2-Edge) on Hugging Face (`hf auth login`).
-
-| Your setup | Run |
-|---|---|
-| **Linux** (or inside WSL), one environment | `pip install "alpamayo2-edge @ git+https://github.com/NVlabs/alpamayo2-edge"`<br>`alpasandbox app --model edge` |
-| **Windows + WSL2**: CARLA on Windows, model in WSL | `alpasandbox app --model edge --runtime wsl --wsl-distro Ubuntu-24.04 --wsl-workdir ~/alpamayo2-edge --wsl-venv .venv --backend carla` |
-| **Model in its own venv** (keeps torch pins separate) | `alpasandbox app --model edge --runtime subprocess --worker-python ~/alpamayo2-edge/.venv/bin/python` |
-| **Remote GPU** | GPU box: `alpasandbox serve-model --model edge`<br>Laptop: `alpasandbox app --model edge --runtime remote --remote-url http://gpu-box:8100` |
-
-Run `alpasandbox doctor` with the same flags to check every piece before the first launch. Step-by-step guides for each setup are in [docs/installation.md](docs/installation.md).
-
-### Driving in CARLA
-
-Start CARLA 0.9.16 (`CarlaUE4 -RenderOffScreen -quality-level=Low -nosound` works well on a shared laptop GPU), then:
-
-```bash
-export HF_HUB_OFFLINE=1 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
-alpasandbox app --backend carla --carla-host <windows-host-ip> --carla-town Town10HD_Opt \
-  --model edge --set accel=tuned --set attn_implementation=flash_attention_2
-```
-
-`accel=tuned` uses NVIDIA's acceleration in `alpamayo2_edge.accel` and needs flash-attn. The first plan compiles CUDA graphs and takes about 15 seconds; later plans take about 1.5 s on a 16 GB laptop GPU shared with CARLA. Other useful settings: `--set num_traj_sets=3` draws alternative plans, `--set diffusion_steps=5` trades accuracy for speed, and `--set model_id=/path/to/checkpoint` loads local weights. Put persistent settings in `alpasandbox.toml` (`alpasandbox init` writes a commented one).
+> **Note:** this mode is not tested yet beyond automated checks (the app starts and headless runs complete). It is a test fixture, not a model, and is not how the screenshots above were made. Please report anything that does not work.
 
 ## Models
 
@@ -133,7 +238,7 @@ On one machine: Windows 11 with CARLA 0.9.16, the model in WSL2 Ubuntu with the 
 | Holds at a red light after stopping | **Not reliably.** Edge sometimes decides to go on red ("the light has turned green"). This is the model's decision, not the controller's |
 | Lane keeping on Town10 straights | No collisions in 15-second runs, but Edge holds the car up to about 1 m off the lane centre |
 
-Not tested on real hardware yet: the `subprocess`, `wsl` and `remote` runtimes, Alpamayo 2 Super, Linux-native CARLA, and the town placement of scenario actors (pedestrians and vehicles placed along the lane can land on kerbs and fail to spawn; the Log tab warns when they do). Reports from other setups are very welcome.
+Not tested on real hardware yet: the `oracle` no-GPU mode beyond automated checks, the `subprocess`, `wsl` and `remote` runtimes, Alpamayo 2 Super, Linux-native CARLA, and the town placement of scenario actors (pedestrians and vehicles placed along the lane can land on kerbs and fail to spawn; the Log tab warns when they do). Reports from other setups are very welcome.
 
 ## How it works
 
