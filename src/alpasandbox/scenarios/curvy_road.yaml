@@ -1,0 +1,8 @@
+name: curvy_road
+description: Gentle S-curves, no traffic.
+tags: [lane-keeping, curves]
+duration: 30
+ego_speed: 8
+road_amplitude: 8
+road_wavelength: 180
+nav_text: Follow the road.

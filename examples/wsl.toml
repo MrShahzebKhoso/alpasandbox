@@ -1,0 +1,19 @@
+# Windows: CARLA on Windows, Alpamayo 2 Edge inside WSL2.  alpasandbox app -c examples/wsl.toml
+[sim]
+backend = "carla"
+
+[carla]
+town = "scenario"
+
+[model]
+name = "edge"
+runtime = "wsl"
+
+[model.settings]
+num_traj_sets = 3
+
+[runtime.wsl]
+distro = "Ubuntu-24.04"
+workdir = "~/alpamayo2-edge"
+venv = ".venv"
+# env = { HF_HUB_OFFLINE = "1" }

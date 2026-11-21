@@ -1,0 +1,8 @@
+name: slow_lead
+description: A slow car ahead in the ego lane. Follow it at a safe distance.
+tags: [vehicle, car-following]
+duration: 25
+ego_speed: 9
+nav_text: Continue straight.
+actors:
+  - {kind: vehicle, x: 40, y: 0, vx: 4}

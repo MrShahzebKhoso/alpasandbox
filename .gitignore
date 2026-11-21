@@ -1,0 +1,22 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+build/
+dist/
+*.jsonl
+results*.json
+/alpasandbox.toml
+# Windows download marks and editor backups
+*:Zone.Identifier
+*Zone.Identifier
+*.bak
+.DS_Store
+.idea/
+.vscode/
+# demo videos are far over GitHub's 100 MB file limit; publish a GIF or attach the MP4 to a release
+assets/*.mp4
+assets/*.mov

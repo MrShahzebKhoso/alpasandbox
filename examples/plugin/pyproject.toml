@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "my-vla-alpasandbox"
+version = "0.1.0"
+dependencies = ["alpasandbox>=0.2", "numpy"]
+
+[project.entry-points."alpasandbox.models"]
+lane-follower = "my_vla.policy:LaneFollower"
+
+[tool.setuptools.packages.find]
+where = ["src"]

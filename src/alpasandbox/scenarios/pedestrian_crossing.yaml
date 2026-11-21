@@ -1,0 +1,8 @@
+name: pedestrian_crossing
+description: A pedestrian steps into the lane ahead; the car should yield.
+tags: [pedestrian, yield]
+duration: 25
+ego_speed: 8
+nav_text: Continue straight.
+actors:
+  - {kind: pedestrian, x: 50, y: -4.5, vy: 1.4, start_t: 3.0}

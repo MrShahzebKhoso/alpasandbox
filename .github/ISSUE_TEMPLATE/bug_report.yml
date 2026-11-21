@@ -1,0 +1,16 @@
+name: Bug report
+description: Something does not work
+body:
+  - type: textarea
+    id: what
+    attributes: { label: What happened, description: What you did, what you expected, what you saw instead. }
+    validations: { required: true }
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `alpasandbox doctor` (with the flags you used)
+      render: text
+    validations: { required: true }
+  - type: textarea
+    id: log
+    attributes: { label: Log tab or terminal output, render: text }

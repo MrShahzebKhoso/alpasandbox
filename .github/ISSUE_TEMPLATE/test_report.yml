@@ -1,0 +1,17 @@
+name: Test report (it works on my setup!)
+description: Share a working setup so others know it is tested
+labels: [test-report]
+body:
+  - type: input
+    id: setup
+    attributes: { label: Setup, placeholder: "Windows 11 + WSL2 Ubuntu 24.04, RTX 4090 24 GB, CARLA 0.9.16, model edge" }
+    validations: { required: true }
+  - type: textarea
+    id: doctor
+    attributes: { label: Output of `alpasandbox doctor`, render: text }
+  - type: textarea
+    id: results
+    attributes: { label: "Optional: `alpasandbox run --all --out results.json` output", render: json }
+  - type: textarea
+    id: notes
+    attributes: { label: Notes, description: "Latency per plan, anything you had to change, screenshots." }

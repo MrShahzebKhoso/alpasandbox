@@ -1,0 +1,10 @@
+name: oncoming_traffic
+description: Oncoming cars pass in the opposite lane. The ego should hold its lane.
+tags: [vehicle, lane-keeping]
+duration: 20
+ego_speed: 9
+nav_text: Continue straight.
+actors:
+  - {kind: vehicle, x: 70, y: 3.5, vx: -9}
+  - {kind: vehicle, x: 130, y: 3.5, vx: -10}
+  - {kind: vehicle, x: 190, y: 3.5, vx: -8}

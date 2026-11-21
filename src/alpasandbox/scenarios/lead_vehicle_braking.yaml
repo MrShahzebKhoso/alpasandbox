@@ -1,0 +1,8 @@
+name: lead_vehicle_braking
+description: A lead car cruises at the ego speed, then brakes to a stop.
+tags: [vehicle, braking]
+duration: 25
+ego_speed: 8
+nav_text: Continue straight.
+actors:
+  - {kind: vehicle, x: 35, y: 0, vx: 8, decel: 4, decel_start_t: 6.0}

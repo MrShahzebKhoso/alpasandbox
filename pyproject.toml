@@ -1,0 +1,68 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "alpasandbox"
+version = "0.3.0"
+description = "Interactive closed-loop sandbox for driving VLA models: NVIDIA Alpamayo 2 Edge/Super, six cameras, CARLA or a built-in simulator, live reasoning and scene Q&A in the browser."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Shahzeb Khoso" }]
+keywords = ["autonomous-driving", "vla", "alpamayo", "carla", "simulation", "reinforcement-learning", "nvidia", "end-to-end-driving"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+  "numpy>=1.26",
+  "pillow>=10",
+  "pyyaml>=6",
+  "httpx>=0.27",
+  "fastapi>=0.110",
+  "uvicorn[standard]>=0.29",
+  "tomli>=2; python_version<'3.11'",
+]
+
+[project.optional-dependencies]
+# The model packages are installed from NVIDIA's GitHub repos (see docs/installation.md);
+# PyPI does not allow direct git dependencies, so they are not listed as extras here.
+carla = ["carla>=0.9.14"]
+dev = ["pytest>=8", "ruff>=0.6", "build>=1"]
+
+[project.scripts]
+alpasandbox = "alpasandbox.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/MrShahzebKhoso/alpasandbox"
+Documentation = "https://github.com/MrShahzebKhoso/alpasandbox/tree/main/docs"
+Issues = "https://github.com/MrShahzebKhoso/alpasandbox/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+alpasandbox = ["web/*", "scenarios/*.yaml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = ["-q", "-p", "no:cacheprovider"]
+
+[tool.ruff]
+line-length = 130
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E731", "B008", "B027", "UP007", "UP045"]  # B027: optional no-op hooks are intentional

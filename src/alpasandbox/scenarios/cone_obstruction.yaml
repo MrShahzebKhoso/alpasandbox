@@ -1,0 +1,8 @@
+name: cone_obstruction
+description: A traffic cone blocks the lane ahead.
+tags: [static, obstacle]
+duration: 20
+ego_speed: 8
+nav_text: Continue straight.
+actors:
+  - {kind: cone, x: 45, y: 0}

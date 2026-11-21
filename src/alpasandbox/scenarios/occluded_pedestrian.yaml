@@ -1,0 +1,9 @@
+name: occluded_pedestrian
+description: A pedestrian steps out from behind a car parked on the shoulder.
+tags: [pedestrian, occlusion]
+duration: 22
+ego_speed: 8
+nav_text: Continue straight.
+actors:
+  - {kind: vehicle, x: 44, y: -2.9}
+  - {kind: pedestrian, x: 49, y: -3.6, vy: 1.3, start_t: 3.5}

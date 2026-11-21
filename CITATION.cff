@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use AlpaSandbox, please cite it as below."
+title: "AlpaSandbox: an interactive closed-loop sandbox for driving vision-language-action models"
+type: software
+authors:
+  - family-names: Khoso
+    given-names: Shahzeb
+    affiliation: "National University of Sciences and Technology (NUST), Islamabad"
+version: 0.3.0
+date-released: 2026-11-21
+license: Apache-2.0
+repository-code: "https://github.com/MrShahzebKhoso/alpasandbox"
+keywords:
+  - autonomous driving
+  - vision-language-action models
+  - closed-loop evaluation
+  - NVIDIA Alpamayo
+  - CARLA

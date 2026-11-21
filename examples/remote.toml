@@ -1,0 +1,8 @@
+# Laptop + remote GPU server running `alpasandbox serve-model --model edge`.
+[model]
+name = "edge"
+runtime = "remote"
+
+[runtime.remote]
+url = "http://localhost:8100"   # e.g. through `ssh -L 8100:localhost:8100 gpu-box`
+# token = "change-me"

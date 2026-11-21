@@ -1,0 +1,10 @@
+name: Model or simulator request
+description: Ask for support of another VLA model or simulator
+body:
+  - type: input
+    id: name
+    attributes: { label: Model or simulator, placeholder: "e.g. Alpamayo 1.5, AlpaSim, MetaDrive" }
+    validations: { required: true }
+  - type: textarea
+    id: links
+    attributes: { label: Links to code, weights and the input format }

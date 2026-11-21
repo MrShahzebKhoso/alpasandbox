@@ -1,0 +1,6 @@
+name: straight_cruise
+description: Empty straight road. Sanity check for lane keeping.
+tags: [sanity]
+duration: 20
+ego_speed: 8
+nav_text: Continue straight.
